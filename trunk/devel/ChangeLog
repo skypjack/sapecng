@@ -1,0 +1,99 @@
+????-??-??  Michele Caini  <skypjack@gmail.com>
+
+	* stack.[hc]: deleted
+	* grimbleby.[hc]: deleted
+
+	* expr.[hc] (stack_to_expr): deleted
+	* expr.[hc] (circ_to_expr): added with related function
+
+	* sapec-ng.c (resolve): based on circ_to_expr function
+
+2007-02-22  Michele Caini  <skypjack@gmail.com>
+
+	* lexer.l: symbols restyling
+
+	* parser.y (elm_tokens, acelm): Operational Amplifier management
+	(elm): unique function for elements management (selm/celm fusion)
+	* lexer.l (ACID): new symbol added
+	({ACID}): new symbol management
+
+	* sapec-ng.dox: new separate manual-like pages
+
+	* src/common.h (flags): new SapWin related flag and macros
+	* src/sapec-ng.c (main): SapWin flag management
+	* src/parser.y (selm): SapWin flag related swap
+
+	* src/common.h (flags): new binary file related flag and macros
+	* src/sapec-ng.c (main): binary flag management
+	(load_and_splash): new function added (binary file related)
+
+	* src/sapec-ng.c (usage): infos about new flags
+
+2007-11-25  Michele Caini  <skypjack@gmail.com>
+
+	* src/*.[hc] (all sources): commented! :-)
+
+	* src/parser.y: warning at compile-time solved
+	more flexible parser (elements' order independent)
+	edge orientation handler (with reverse-sign)
+	* src/lexer.l: warning at compile-time solved
+	internal buffer/stack memory leak solved
+	comments-capable (comments start with '*' character)
+	int/real scientific notation treatment added
+	SID/CID extended identifier notation
+	* src/parser.y, src/lexer.l: int/real conflict solved
+	(selm/celm): added with int/real handler
+	(selm/celm): negative node control
+	(selm/celm): undefined status control
+	output-node upper bound limit control
+
+	* src/common.h (flags): flags added (environment)
+	(flags): flags management related macros
+	* src/sapec-ng.c (main): environment management
+	(verbose): mode added into resolve function
+
+	* src/list.[hc] (list_next_entry): macro added
+	(list_data): macro added
+
+	* src/expr.c (splash): length computation refined
+	(splash): sign handler added
+	(stack_to_expr): lost-degree conversion solved
+	(stack_to_expr): find-and-shrink reduction routine
+	(stack_to_expr): integrated sort support
+	(splash_group): degree-group splash function
+	(splash): degree grouping behavior
+	(stack_to_expr): incidence matrix (sign) handler
+	(forced_handler): incidence matrix (sign) handler
+	(to_diagonal_matrix): new function added
+
+	* src/circuit.c (circ_ext): gi/gv allocation error solved
+
+2007-08-15  Michele Caini  <skypjack@gmail.com>
+
+	* src/circuit.h (edge_t): degree parameter added
+	* src/cutils.[ch] (all functions): degree related management
+	* src/parser.y (selm/celm token): degree related management
+
+	* src/xmemrep.c (xstrdup): strdup with memory management
+
+	* src/expr.[hc] (expr_t): added into resolver session
+
+	* src/ioutils.[hc] (IO-functions): independent layer
+	(expr_to_file): function added
+	(expr_from_file): function added
+
+2007-06-12  Michele Caini  <skypjack@gmail.com>
+
+	* src/list.h (list_t): system-wide unique list structure
+
+	* src/lexer.l, src/parser.y (flex/bison): new automated parser
+	* src/sapec-ng.c (resolve): parser support addedd
+
+2007-04-11  Michele Caini  <skypjack@gmail.com>
+
+	* Sapec-NG (executable): sapec-ng works fine ! :-)
+
+
+Copyright (C)  2007  Michele Caini
+Copying and distribution of this file, with or without modification, are
+permitted provided the copyright notice and this notice are preserved.

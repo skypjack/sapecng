@@ -1,0 +1,13 @@
+It's more than enough:
+./configure && make
+Binary will be in src directory.
+
+Documentation is under development; if you search out some errors, please
+contact sapec-ng developers.
+
+Sapec-NG's files syntax is SapWin-like (Spice-like).
+
+Sapec is an original Unifi's project for Microsoft Windows platforms. You can
+download for free the original one (SapWin 3.0) from web:
+http://cirlab.det.unifi.it/Sapwin/
+
