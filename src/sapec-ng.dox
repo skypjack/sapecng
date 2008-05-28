@@ -1,0 +1,327 @@
+/****************************************************************************************
+
+   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+   Copyright (C)  2007  Michele Caini
+
+
+   This file is part of Sapec-NG.
+
+   Sapec-NG is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+
+   To contact me:   skypjack@gmail.com
+
+****************************************************************************************/
+
+/**
+ * \mainpage Sapec-NG (Next Generation Sapec Core)
+ *
+ * <div align="right"><i>to Maria, my grandmother</i></div>
+ *
+ * \section sapec-ng Sapec-NG
+ *
+ * <p>
+ * Sapec-NG (Next Generation Symbolic Analysis Program for Electric Circuit) is a
+ * software that performs symbolic analysis of linear analog circuits.
+ * <br> Sapec-NG is able to calculate any network function of a circuit in the
+ * Laplace domain using either symbolic or numerical parameters, placing the
+ * result into an ASCII file. Moreover, it stores the result in a binary format
+ * into a separate file. The aim of the binary file is to permit to an external
+ * program further processing of data; to this purpose, some member functions
+ * are present, which can be used to retrieve data directly from the binary
+ * file.
+ *
+ * <p>
+ * Some components are available to build an own circuit to be analized. The
+ * graphical user interface is under development.
+ * <br> Several linear components are available, passive and active, including
+ * controlled sources. Some other components will be added in the future.
+ * <br> The simulator can calculate the symbolic network function of the circuit
+ * with an adjustable "symbolic level", namely, each component can appear in the
+ * network function with its symbolic name or with a numerical value.
+ *
+ * \section dev Development
+ *
+ * <p>
+ * The program is written in C and (maybe) runs on Windows
+ * (95/98/ME/NT/2000/XP/Vista) and Linux.
+ * <br> The source code has been developed on a Gentoo Linux system and compiled
+ * (for testing) with gcc version 4.1.2 .
+ * <br> The Chief Architect of Sapec-NG is Michele Caini, postgraduate student
+ * in Computer Engineering at the University of Florence, Italy.
+ *
+ * \subsection gui GUI
+ *
+ * <p>
+ * A graphical user interface (or GUI) is under development. For more
+ * information about the GUI, please contact:  
+ * <br> Michele Caini, at skypjack@gmail.com 
+ * <br> Antonio Luchetta, at luchetta@unifi.it 
+ *
+ * \section Feedback
+ *
+ * <p>
+ * For any feedback about the program and the source code, please write to:
+ * <br> Michele Caini, at skypjack@gmail.com 
+ * <br> Antonio Luchetta, at luchetta@unifi.it 
+ *
+ *
+ * \page examples Examples
+ *
+ * \section exone Voltage Divider
+ *
+ * <p>
+ * This is a simple device designed to create a voltage which is proportional to
+ * another voltage. It is also known by the term resistor divider.<br>
+ * The circuit representation is:
+ * \verbatim
+   V1 1 0 1 0
+   R1 1 2 1 0
+   R2 2 0 1 0
+   .OUT 2
+   .END\endverbatim
+ * That is, a voltage generator named V1 between node 1 and node 0 (ground
+ * node), a resistance named R1 between node 1 and node 2, and another
+ * resistance named R2 between node 2 and node 0 (again, the ground node). Every
+ * component has a numeric value of 1 and is treated by his symbolic form.<br>
+ * As you can see, the desired output is the voltage on node 2 in regard of the
+ * ground node (node 0). Clearly, the result is:
+ * \verbatim
+    ( + R2 V1 )
+   ---------------
+    ( + R1 + R2 )\endverbatim
+ *
+ * \section extwo Current Divider
+ *
+ * <p>
+ * This is a simple device designed to create a voltage which is proportional to
+ * a current, that is forced by a current generator into the circuit. The output
+ * voltage results from that current multiplied by a specific resistance.<br>
+ * The circuit representation is:
+ * \verbatim
+   I1 1 2 1 0
+   R1 1 0 -2 0
+   R2 2 0 3 0
+   .OUT 1
+   .END\endverbatim
+ * That is, a current generator named I1 from node 1 to node 2 with a numeric
+ * value of 1, a resistance named R1 between node 1 and node 0 (ground node)
+ * with a numeric value of -2, and another resistance named R2 between node 2
+ * and node 0 (again, the ground node) with a numeric value of 3. Every
+ * component is treated by his symbolic form.<br> 
+ * As you can see, the desired output is the voltage on node 1 in regard of the
+ * ground node (node 0). Clearly, the result is:
+ * \verbatim
+    ( - I1 R1 )
+   -------------
+    ( + 1 )\endverbatim
+ *
+ * <p>
+ * You also can mix symbolic components with numeric ones. This is the previous
+ * example with the resistance named R1 not yet treated as a symbolic
+ * component but as a numeric component. Moreover, resistance R1 has a numeric
+ * value of -2. Again, the desired output is the same of the previous
+ * example. The circuit description is:
+ * \verbatim
+   I1 1 2 1 0
+   R1 1 0 -2 1
+   R2 2 0 3 0
+   .OUT 1
+   .END\endverbatim
+ * And the result is:
+ * \verbatim
+    ( + 2 I1 )
+   ------------
+    ( + 1 )\endverbatim
+ *
+ * \section exthree Voltage Controlled Voltage Divider
+ *
+ * <p>
+ * This is a simple device designed to create a voltage which is proportional to
+ * another voltage which is controlled directly by a voltage generator.<br>
+ * Of course, what a headache!<br>
+ * The circuit representation is:
+ * \verbatim
+   V1 1 0 1 0
+   E1 2 0 1 0 1 0
+   R1 2 3 1 0
+   R2 3 0 1 0
+   .OUT 3
+   .END\endverbatim
+ * That is, a voltage generator named V1 between node 1 and node 0 (ground
+ * node), a resistance named R1 between node 2 and node 3, and another
+ * resistance named R2 between node 3 and node 0 (again, the ground node). There
+ * is also one new component, a voltage controlled voltage source: controlled
+ * nodes are 2 and 0, controlling nodes are 1 and 0. Every component has a
+ * numeric value of 1 and is treated by his symbolic form.<br> 
+ * As you can see, the desired output is the voltage on node 3 in regard of the
+ * ground node (node 0). Clearly, the result is:
+ * \verbatim
+    ( + E1 R2 V1 )
+   ----------------
+    ( + R1 + R2 )\endverbatim
+ *
+ *
+ * \page circuits Circuits representation
+ *
+ * \section components Components
+ *
+ * <p>
+ * There are several components that can be used to write own personal circuit.
+ * <br> More components will be added in the future, be patient.
+ *
+ * \subsection Symbol
+ *
+ * <p>
+ * Those are the symbols that can be used to write own personal circuit:
+ * \verbatim
+   DIGIT : [0-9]
+   ID : [_a-zA-Z0-9]+
+   SID : [R|G|C|L|V|I]
+   CID : [H|E|F|Y]
+   ACID : [A]
+   SIGN : [+|-]
+   EXP : [e|E][+|-]?[0-9]+
+
+   SID = {SID}{ID}
+   CID = {CID}{ID}
+   ACID = {ACID}{ID}
+   INT = {SIGN}?{DIGIT}+
+   EINT = {SIGN}?{DIGIT}+{EXP}
+   REAL = {SIGN}?{DIGIT}*"."{DIGIT}+{EXP}?
+   END = ".END"
+   OUT = ".OUT"\endverbatim
+ *
+ * <p>
+ * Blank spaces and special characters like \\t, \\r, \\n will be discarded.
+ * <br> Lines which start with '*' character are treated as comments and will
+ * be discarded, wherever its may be, so please insert comments into your
+ * circuit files.
+ * <br> Any other symbol will be returned as-is.
+ *
+ * <p>
+ * For each character the appropriate mean is:
+ * <ul>
+ *   <li>R : resistor</li>
+ *   <li>G : impedance</li>
+ *   <li>C : capacitor</li>
+ *   <li>L : inductor</li>
+ *   <li>V : voltage generator</li>
+ *   <li>I : current generator</li>
+ *   <li>H : voltage controlled current source</li>
+ *   <li>E : voltage controlled voltage source</li>
+ *   <li>F : current controlled current source</li>
+ *   <li>Y : current controlled voltage source</li>
+ *   <li>A : operational amplifier</li>
+ * </ul>
+ *
+ * \subsection grammar Grammar
+ *
+ * <p>
+ * This is the grammar adopted by sapec-ng:
+ *\verbatim
+   circ: elm_tokens out END
+
+   elm_tokens: elm_tokens selm
+    | elm_tokens celm
+    | elm_tokens acelm
+    | selm
+    | celm
+    | acelm
+
+   selm: SID INT INT REAL INT
+    | SID INT INT EINT INT
+    | SID INT INT INT INT
+
+   celm: CID INT INT INT INT REAL INT
+    | CID INT INT INT INT EINT INT
+    | CID INT INT INT INT INT INT
+
+   acelm: ACID INT INT INT INT
+
+   out: OUT INT\endverbatim
+ *
+ * <p>
+ * Note that <i>selm</i> is the token representing a two-terminal component
+ * (like resistance or voltage generator), <i>celm</i> is the token representing
+ * a four-terminal component (like controlled generator with two controlled
+ * nodes and two controlling nodes), and <i>acelm</i> is the token representing
+ * a four-terminal component without related value and status (like operational
+ * amplifier). There is a dedicated page containing some examples about how
+ * people can write circuits.
+ *
+ * \subsection note Note
+ *
+ * <p>
+ * Real grammar is a bit different from that above. In fact, EINT symbol
+ * doesn't exist and it isn't used within Sapec-NG. That is, EINT is
+ * treated as a special kind of REAL. Moreover, every circuit have to contain at
+ * least one component, the OUT token, and the END token.
+ *
+ *
+ * \page output Output file
+ *
+ * \section output Syntax
+ *
+ * The .fdt output file is a binary file that contains final expression in form
+ * of internal structures. You can look at %expr.h for the %expr structure
+ * definition. This kind of data are stored one time for the numerator and one
+ * time for the denominator, in practice just once for the whole
+ * expression. Data are stored one %expr structure at time, as follows:
+ * <ul>
+ *  <li>first of all, the number of present %expr structures is stored</li>
+ *  <li>for each structure, data are stored as follows:
+ *   <ul>
+ *    <li>degree of the expression</li>
+ *    <li>numerical part of the expression</li>
+ *    <li>number of symbolic components</li>
+ *    <li>group of strings (one for each symbolic components) terminated by a
+ *     '\\0' character</li>
+ *   </ul>
+ *  </li>
+ * </ul>
+ * There are two useful functions which can be used to store internal structures
+ * into the .fdt file and to retrieve data from a .fdt file. Those functions
+ * (the latter in particular) are written to be used by an hypothetic external
+ * program, like a GUI. Sapec-NG uses only the former to store the %expr
+ * structures.
+ *
+ *
+ * \page license License
+ *
+ * \section license License
+ *
+ * <p>
+ * Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ * <br> Copyright (C)  2007  Michele Caini
+ *
+ * <p>
+ * Sapec-NG is free software; you can redistribute it and/or modify
+ * <br> it under the terms of the GNU General Public License as published by
+ * <br> the Free Software Foundation; either version 2 of the License, or
+ * <br> (at your option) any later version.
+ *
+ * <p>
+ * This program is distributed in the hope that it will be useful,
+ * <br> but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * <br> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * <br> GNU General Public License for more details.
+ *
+ * <p>
+ * You should have received a copy of the GNU General Public License
+ * <br> along with this program; if not, write to the Free Software
+ * <br> Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301  USA
+ */
