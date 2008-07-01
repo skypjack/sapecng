@@ -1,13 +1,10 @@
-Source: sapec-ng
+Package: sapec-ng
+Version: 1.8.2
 Section: electronics
 Priority: extra
+Architecture: all
+Source: sapec-ng
 Maintainer: Michele Caini <skypjack@gmail.com>
-Build-Depends: debhelper (>= 6), autotools-dev
-Standards-Version: 3.7.3
 Homepage: http://sourceforge.net/projects/sapec-ng/
-
-Package: sapec-ng
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit.
  Sapec-NG is a symbolic analysis program for linear analog circuits. It is an open source project for Linux-platform, in continuous progress by students and researchers of Department of Electronics and Telecommunications of the University of Florence. It comes "after" and as "continuation" of Sapwin for Windows, in order to give to the project a full compatibility on Linux platform.
