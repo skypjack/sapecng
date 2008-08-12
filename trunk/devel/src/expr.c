@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 /**
  * \file expr.c
@@ -208,7 +208,7 @@ splash (expr_t* elist, FILE* fref, const int mode)
  * \return number of errors occurred
  */
 int
-expr_to_file (expr_t* elist, FILE* file)
+expr_to_file (const expr_t* elist, FILE* file)
 {
   list_t* iter;
   size_t ll;
@@ -392,48 +392,6 @@ free_expr (expr_t* elist)
 }
 
 /**
- * \brief Adds %forced edges into the expression
- *
- * \internal
- * This function is used by \e stack_to_expr to add %forced edges into the
- * expression via a simple way (really, simply a function invocation).
- *
- * \param fiter %forced edges %list
- * \param eslice expression %list token reference
- * \param giimat current tree's incidence matrix
- * \param gvimat voltage tree's incidence matrix
- * \param imrl incidence matrices' row length
- */
-static void
-forced_handler (const forced_t* fiter, expr_t* eslice, int* giimat, int* gvimat, const int imrl)
-{
-  int cnt;
-  list_t** liter;
-  cnt = 0;
-  while(fiter != NULL) {
-    giimat[imrl * fiter->gitoken[0] + cnt] = -1;
-    giimat[imrl * fiter->gitoken[1] + cnt] = 1;
-    gvimat[imrl * fiter->gvtoken[0] + cnt] = -1;
-    gvimat[imrl * fiter->gvtoken[1] + cnt] = 1;
-    if(fiter->data->sym == 1) {
-      if(fiter->data->name) {
-	// ordered insertion
-	liter = &(eslice->epart);
-	while((*liter != NULL) && (strcmp(list_data(const char, (*liter)), fiter->data->name) < 0))
-	  liter = &((*liter)->next);
-	*liter = list_add(list_new((void*) xstrdup(fiter->data->name)), *liter);
-	// unordered insertion
-        // eslice->epart = list_add(list_new((void*) xstrdup(fiter->data->name)), eslice->epart);
-        ++(eslice->etoken);
-        eslice->degree += fiter->data->degree;
-      }
-    } else eslice->vpart *= fiter->data->value;
-    fiter = list_next_entry(forced_t, fiter);
-    ++cnt;
-  }
-}
-
-/**
  * \brief Gaussian elimination algorithm
  *
  * \internal
@@ -485,39 +443,6 @@ to_diagonal_matrix (int* matrix, const int row, const int col)
   for(iter = 0; iter < col; ++iter)
     det *= matrix[iter * col + iter];
   return det;
-}
-
-/**
- * \deprecated obsolete function
- *
- * \sa stack_to_expr
- *
- * \brief Sort function for expression %list
- *
- * Sorting an expression %list with this function will results in a new
- * expression %list which tokens will be ordered by their degree.<br>
- * Actually, this function is never used.
- *
- * \param elist expression %list to be sorted
- * \result sorted expression %list
- */
-expr_t*
-expr_sort (expr_t* elist)
-{
-  expr_t* tmp;
-  expr_t** iter;
-  expr_t* olist;
-  olist = NULL;
-  while(elist != NULL) {
-    iter = &olist;
-    while((*iter != NULL) && ((*iter)->degree > elist->degree))
-        iter = &((*iter)->next);
-    tmp = *iter;
-    *iter = elist;
-    elist = list_next_entry(expr_t, elist);
-    (*iter)->next = tmp;
-  }
-  return olist;
 }
 
 /**
@@ -620,11 +545,18 @@ testloop (const int* cc, const int nh, const int nt)
  * This function adds a token to the expression and returns the head of a new
  * tight and sorted expression
  *
+ * \param crep circuit representation reference
+ * \param nodes nodes into the tree
+ * \param mask pre-allocated %mask support array
+ * \param maskmark step marker, nothing more
+ * \param giimat current graph pre-allocated matrix
+ * \param gvimat voltage pre-allocated graph matrix
+ * \param chain chain of expressions
+ * \result chain of expressions' head
  */
 static expr_t*
 to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* giimat, int* gvimat, expr_t* chain)
 {
-  int sdim;
   int iter;
   int actv;
   int offset;
@@ -635,7 +567,6 @@ to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* 
   list_t* lhook;
   void* hook;
   elist = chain;
-  sdim = crep->nnum - 1 - crep->efnum - 1;
   for(iter = 0; iter < crep->ednum; ++iter)
     mask[iter] = 0;
   eslice = expr_new();
@@ -643,17 +574,15 @@ to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* 
     giimat[iter] = 0;
     gvimat[iter] = 0;
   }
-  forced_handler(crep->flist, eslice, giimat, gvimat, (crep->nnum - 1));
-  offset = crep->efnum;
-  ++maskmark;
-  for(iter = 0; iter < sdim; ++iter)
+  offset = 0;
+  for(iter = 0; iter < crep->nnum - 1; ++iter)
     mask[nodes[iter]] = maskmark;
   for(iter = 0; iter < crep->ednum; ++iter) {
     if(mask[iter] == maskmark) {
-      giimat[(crep->nnum - 1) * crep->gi[2 * iter] + offset] = -1;
-      giimat[(crep->nnum - 1) * crep->gi[2 * iter + 1] + offset] = 1;
-      gvimat[(crep->nnum - 1) * crep->gv[2 * iter] + offset] = -1;
-      gvimat[(crep->nnum - 1) * crep->gv[2 * iter + 1] + offset] = 1;
+      giimat[(crep->nnum - 1) * crep->edge[iter].giref[0]->node + offset] = -1;
+      giimat[(crep->nnum - 1) * crep->edge[iter].giref[1]->node + offset] = 1;
+      gvimat[(crep->nnum - 1) * crep->edge[iter].gvref[0]->node + offset] = -1;
+      gvimat[(crep->nnum - 1) * crep->edge[iter].gvref[1]->node + offset] = 1;
       ++offset;
     }
     if(((mask[iter] == maskmark) && (crep->edge[iter].type == Y)) ||	\
@@ -674,13 +603,6 @@ to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* 
       } else eslice->vpart *= crep->edge[iter].value;
       eslice->degree += crep->edge[iter].degree;
     }
-  }
-  // support edge reference
-  if(crep->esupport != NULL) {
-    giimat[(crep->nnum - 1) * crep->esupport->gitoken[0] + offset] = -1;
-    giimat[(crep->nnum - 1) * crep->esupport->gitoken[1] + offset] = 1;
-    gvimat[(crep->nnum - 1) * crep->esupport->gvtoken[0] + offset] = -1;
-    gvimat[(crep->nnum - 1) * crep->esupport->gvtoken[1] + offset] = 1;
   }
   // sign computation
   eslice->vpart *= to_diagonal_matrix(giimat, crep->nnum, (crep->nnum - 1));
@@ -725,7 +647,7 @@ to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* 
 }
 
 /**
- * \brief This function is used by \e circ_to_expr function to complete its work
+ * \brief This function is used by \e grimbleby function to complete its work
  *
  * \internal
  * This function is the core of grimbleby's algorithm, that means this function
@@ -736,16 +658,15 @@ to_expr (const circ_t* crep, const node_t* nodes, int* mask, int maskmark, int* 
  * \param chain %list pointer wiht the newly allocated stacks as payload
  * \param ccgi circuit graph's common components
  * \param ccgv voltage graph's common components
+ * \param nodes nodes into the tree
  * \result zero if some error occurs, a positive value otherwise
  */
 static int
-grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
+ghelper (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv, node_t* nodes)
 {
   int ret;
   int pos;
   int cnt;
-  int sdim;
-  node_t* nodes;
   int* giimat;
   int* gvimat;
   int* mask;
@@ -763,9 +684,8 @@ grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
   } flag = SF;
   ret = 1;
   pos = -1;
-  cnt = 0;
-  sdim = crep->nnum - 1 - crep->efnum - 1;
-  nodes = XMALLOC(node_t, sdim);
+  // Tree-on-graph size (# of nodes - 1)
+  cnt = 1 + crep->efnum;
   mask = XMALLOC(int, crep->ednum);
   giimat = XMALLOC(int, (crep->nnum * (crep->nnum - 1)));
   gvimat = XMALLOC(int, (crep->nnum * (crep->nnum - 1)));
@@ -776,43 +696,43 @@ grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
   while((ret)&&(flag != OF)) {
     switch(flag) {
     case TF:
-      if(cnt == sdim) {
+      if(cnt == (crep->nnum - 1)) {
 	VERBOSE(".");
 	// "burn"
-	elist = to_expr (crep, nodes, mask, maskmark++, giimat, gvimat, elist);
+	elist = to_expr (crep, nodes, mask, ++maskmark, giimat, gvimat, elist);
 	// ! "burn"
 	flag = BF;
       } else flag = SF;
       break;
     case SF:
       ++pos;
-      if(sdim - cnt > crep->ednum - pos) flag = EF;
+      if((crep->nnum - 1) - cnt > crep->ednum - pos) flag = EF;
       else flag = LF;
       break;
     case LF:
-      if(testloop(ccgi, crep->gi[2*pos], crep->gi[2*pos+1])) flag = SF;
-      else if(testloop(ccgv, crep->gv[2*pos], crep->gv[2*pos+1])) flag = SF;
+      if(testloop(ccgi, crep->edge[pos].giref[0]->node, crep->edge[pos].giref[1]->node)) flag = SF;
+      else if(testloop(ccgv, crep->edge[pos].gvref[0]->node, crep->edge[pos].gvref[1]->node)) flag = SF;
       else flag = IF;
       break;
     case IF:
-      if(cnt == sdim) ret = 0;
+      if(cnt == (crep->nnum - 1)) ret = 0;
       else {
 	nodes[cnt++] = pos;
-	ctrlplus(ccgi, crep->gi[2*pos], crep->gi[2*pos+1], crep->nnum);
-	ctrlplus(ccgv, crep->gv[2*pos], crep->gv[2*pos+1], crep->nnum);
+	ctrlplus(ccgi, crep->edge[pos].giref[0]->node, crep->edge[pos].giref[1]->node, crep->nnum);
+	ctrlplus(ccgv, crep->edge[pos].gvref[0]->node, crep->edge[pos].gvref[1]->node, crep->nnum);
 	flag = TF;
       }
       break;
     case EF:
-      if(cnt == 0) flag = OF;
+      if(cnt == 1 + crep->efnum) flag = OF;
       else flag = BF;
       break;
     case BF:
-      if(cnt == 0) ret = 0;
+      if(cnt == 1 + crep->efnum) ret = 0;
       else {
 	pos = nodes[--cnt];
-	ctrlminus(ccgi, crep->gi[2*pos], crep->gi[2*pos+1], crep->nnum);
-	ctrlminus(ccgv, crep->gv[2*pos], crep->gv[2*pos+1], crep->nnum);
+	ctrlminus(ccgi, crep->edge[pos].giref[0]->node, crep->edge[pos].giref[1]->node, crep->nnum);
+	ctrlminus(ccgv, crep->edge[pos].gvref[0]->node, crep->edge[pos].gvref[1]->node, crep->nnum);
 	flag = SF;
       }
       break;
@@ -824,7 +744,75 @@ grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
   XFREE(gvimat);
   XFREE(giimat);
   XFREE(mask);
-  XFREE(nodes);
+  return ret;
+}
+
+/**
+ * \brief Circuit-to-expression conversion function using grimbleby's algorithm
+ *
+ * \internal
+ * Grimbleby's algorithm entry point: support elements are pushed in before to
+ * invoke \e ghelper function which really solves common trees
+ * problem. Connected components variations are tracked here.
+ *
+ * \param crep %circuit reference
+ * \param yrefchain pointer to be used to store the first %list
+ * \param grefchain pointer to be used to store the second %list
+ * \result zero if some error occurs, a positive value otherwise
+ */
+static int
+grimbleby (const circ_t* crep, list_t** yrefchain, list_t** grefchain)
+{
+  int ret;
+  int* ccgi;
+  int* ccgv;
+  int iter;
+  list_t* fiter;
+  edge_t* etmp;
+  node_t* nodes;
+  if(crep != NULL) {
+    ret = 1;
+    ccgi = XMALLOC(int, 2*crep->nnum);
+    ccgv = XMALLOC(int, 2*crep->nnum);
+    nodes = XMALLOC(node_t, crep->nnum - 1);
+    for(iter = 0; iter < crep->nnum; ++iter) {
+      ccgi[2*iter] = ccgv[2*iter] = iter;
+      ccgi[2*iter + 1] = ccgv[2*iter + 1] = -1;
+    }
+    // forced edges!! :-) ... test loop needed ??
+    iter = -1;
+    fiter = crep->flist;
+    while(fiter) {
+      etmp = list_data(edge_t, fiter);
+      ctrlplus(ccgi, etmp->giref[0]->node, etmp->giref[1]->node, crep->nnum);
+      ctrlplus(ccgv, etmp->gvref[0]->node, etmp->gvref[1]->node, crep->nnum);
+      nodes[++iter] = edge_number(crep, etmp);
+      fiter = list_next(fiter);
+    }
+    ++iter;
+    if(crep->yref != NULL) {
+      ctrlplus(ccgi, crep->yref->giref[0]->node, crep->yref->giref[1]->node, crep->nnum);
+      ctrlplus(ccgv, crep->yref->gvref[0]->node, crep->yref->gvref[1]->node, crep->nnum);
+      nodes[iter] = edge_number(crep, crep->yref);
+      if(ret) ret = ghelper(crep, yrefchain, ccgi, ccgv, nodes);
+      ctrlminus(ccgi, crep->yref->giref[0]->node, crep->yref->giref[1]->node, crep->nnum);
+      ctrlminus(ccgv, crep->yref->gvref[0]->node, crep->yref->gvref[1]->node, crep->nnum);
+    }
+    if(crep->gref != NULL) {
+      ctrlplus(ccgi, crep->gref->giref[0]->node, crep->gref->giref[1]->node, crep->nnum);
+      ctrlplus(ccgv, crep->gref->gvref[0]->node, crep->gref->gvref[1]->node, crep->nnum);
+      nodes[iter] = edge_number(crep, crep->gref);
+      if(ret) ret = ghelper(crep, grefchain, ccgi, ccgv, nodes);
+      ctrlminus(ccgi, crep->gref->giref[0]->node, crep->gref->giref[1]->node, crep->nnum);
+      ctrlminus(ccgv, crep->gref->gvref[0]->node, crep->gref->gvref[1]->node, crep->nnum);
+    }
+    XFREE(ccgi);
+    XFREE(ccgv);
+    XFREE(nodes);
+  } else {
+    warning("Null pointer!");
+    ret = 0;
+  }
   return ret;
 }
 
@@ -834,8 +822,8 @@ grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
  * This function permits to convert a %circuit into an expression composed by
  * some tokens that involve names, degree, numeric part and so on; expressions
  * are final, easy to manage parts of the resolution process. As a matter of
- * fact, this function does more: indeed, it returns a tight and sorted
- * expression, all-in-one! :-)
+ * fact, this function does more: indeed, it returns tight and sorted
+ * expressions, all-in-one! :-)
  *
  * \param crep %circuit reference
  * \param yrefchain pointer to be used to store the first %list
@@ -843,57 +831,12 @@ grimbleby (const circ_t* crep, list_t** chain, int* ccgi, int* ccgv)
  * \result zero if some error occurs, a positive value otherwise
  */
 int
-circ_to_expr (circ_t* crep, list_t** yrefchain, list_t** grefchain)
+circ_to_expr (const circ_t* crep, list_t** yrefchain, list_t** grefchain)
 {
   int ret;
-  int* ccgi;
-  int* ccgv;
-  int iter;
-  forced_t* fptr;
-  isolated_t* iptr;
-  int (*cf) (const circ_t*, list_t**, int*, int*);
+  int (*cf) (const circ_t*, list_t**, list_t**);
+  // Here will be common trees finder function switch
   cf = grimbleby;
-  if(crep != NULL) {
-    ret = 1;
-    ccgi = XMALLOC(int, 2*crep->nnum);
-    ccgv = XMALLOC(int, 2*crep->nnum);
-    for(iter = 0; iter < crep->nnum; ++iter) {
-      ccgi[2*iter] = iter;
-      ccgv[2*iter] = iter;
-      ccgi[2*iter + 1] = -1;
-      ccgv[2*iter + 1] = -1;
-    }
-    fptr = crep->flist;
-    while((fptr != NULL) && (ret)) {
-      if(testloop(ccgi, fptr->gitoken[0], fptr->gitoken[1])) ret = 0;
-      if(testloop(ccgv, fptr->gvtoken[0], fptr->gvtoken[1])) ret = 0;
-      ctrlplus(ccgi, fptr->gitoken[0], fptr->gitoken[1], crep->nnum);
-      ctrlplus(ccgv, fptr->gvtoken[0], fptr->gvtoken[1], crep->nnum);
-      fptr = list_next_entry(forced_t, fptr);
-    }
-    if(crep->yref != NULL) {
-      set_support_yref(crep);
-      iptr = crep->yref;
-      ctrlplus(ccgi, iptr->gitoken[0], iptr->gitoken[1], crep->nnum);
-      ctrlplus(ccgv, iptr->gvtoken[0], iptr->gvtoken[1], crep->nnum);
-      if(ret) ret = (*cf)(crep, yrefchain, ccgi, ccgv);
-      ctrlminus(ccgi, iptr->gitoken[0], iptr->gitoken[1], crep->nnum);
-      ctrlminus(ccgv, iptr->gvtoken[0], iptr->gvtoken[1], crep->nnum);
-    }
-    if(crep->gref != NULL) {
-      set_support_gref(crep);
-      iptr = crep->gref;
-      ctrlplus(ccgi, iptr->gitoken[0], iptr->gitoken[1], crep->nnum);
-      ctrlplus(ccgv, iptr->gvtoken[0], iptr->gvtoken[1], crep->nnum);
-      if(ret) ret = (*cf)(crep, grefchain, ccgi, ccgv);
-      ctrlminus(ccgi, iptr->gitoken[0], iptr->gitoken[1], crep->nnum);
-      ctrlminus(ccgv, iptr->gvtoken[0], iptr->gvtoken[1], crep->nnum);
-    }
-    XFREE(ccgi);
-    XFREE(ccgv);
-  } else {
-    warning("Null pointer!");
-    ret = 0;
-  }
+  ret = (*cf)(crep, yrefchain, grefchain);
   return ret;
 }

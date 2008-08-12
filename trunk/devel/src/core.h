@@ -26,70 +26,25 @@
  ***************************************************************************************/
 
 /**
- * \file list.h
+ * \file core.h
  *
- * \brief List type and related functions
+ * \brief Core routine to find common trees between two graphs
  *
- * This file contains a definition for the %list structure.
+ * This file contains some functions used to find common trees between
+ * graphs. There is an entry point and several static functions to exploit
+ * different works, involved into the main routine.
  */
 
 /**
  * \brief Useful to manage multiple inclusions
  */
-#ifndef LIST_H
-#define LIST_H 1
+#ifndef CORE_H
+#define CORE_H 1
 
 #include "common.h"
+#include "circuit.h"
+#include "list.h"
 
-/**
- * \brief list_next with integrated cast
- *
- * This macro gets the %next element casting it before return.
- */
-#define list_next_entry(type, head) \
-  (type*) list_next ((list_t*) head)
+// BODY
 
-/**
- * \brief Gets %data function with integrated cast
- *
- * This macro gets %data element casting them before return.
- */
-#define list_data(type, head) \
-  (type*) head->data
-
-/**
- * \brief List type
- *
- * This structure is a general-purpose %list structure that every kind of listed
- * types can use (capitalizing also on the associated functions), simply putting
- * \e next pointer as the first field and exploiting cast operation.
- */
-struct list
-{
-  struct list* next;  /**< \e Next element of the %list */
-  void* data;  /**< Potential %data (without type) */
-};
-
-/**
- * \brief Simpler %struct %list definition.
- */
-typedef
-struct list
-list_t;
-
-extern list_t*
-list_new (void*);
-
-extern void
-list_del (list_t*);
-
-extern list_t*
-list_add (list_t*, list_t*);
-
-extern list_t*
-list_next (const list_t*);
-
-extern size_t
-list_length (list_t*);
-
-#endif /* LIST_H */
+#endif /* CORE_H */

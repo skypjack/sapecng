@@ -130,9 +130,9 @@ elm (int na, int nb, const int nac, const int nbc, const int sym, const double v
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, tmp, crep->reserved, crep->reserved, crep->reference, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, crep->reserved, nb, na, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, crep->reserved, nb, na, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, crep->reserved, tmp, 0, 1, 1);
+    // noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nb, na, crep->reserved, tmp, NULL, 1, 1);
     break;
   case 'I':
     if(SAPWIN()) {
@@ -151,24 +151,24 @@ elm (int na, int nb, const int nac, const int nbc, const int sym, const double v
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, tmp, nbc, nac, nbc, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, nbc, nb, na, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, nbc, nb, na, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, nbc, tmp, 0, 1, 1);
+    // noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nb, na, nbc, tmp, NULL, 1, 1);
     break;
   case 'F':  // CCCS
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, nac, nbc, nbc, tmp, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, na, nb, nbc, tmp, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, na, nb, nbc, tmp, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nbc, tmp, nbc, nac, 0, 1, 1);
+    // noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nbc, tmp, nbc, nac, NULL, 1, 1);
     break;
   case 'Y':  // CCVS
     noerr &= addsimple(crep, nac, nbc, na, nb, id, Z, 0, val, sym);
-    noerr &= addnullor(crep, nb, na, nbc, nac, 0, 1, 1);
+    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
     break;
   case 'A':  // AMP.OP.
-    noerr &= addnullor(crep, nb, na, nbc, nac, 0, 1, 1);
+    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
     break;
   }
   if(!noerr)
@@ -505,8 +505,8 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   137,   137,   143,   144,   145,   146,   147,   150,   162,
-     177,   191,   208,   220
+       0,   137,   137,   143,   144,   145,   146,   147,   150,   163,
+     179,   194,   212,   225
 };
 #endif
 
@@ -1443,11 +1443,12 @@ yyreduce:
       val = (yyvsp[(4) - (5)].real);
       sym = (yyvsp[(5) - (5)].integer);
       elm(na, nb, 0, 0, !sym, val, id, crep);
+      XFREE(id);
     }
     break;
 
   case 9:
-#line 163 "parser.y"
+#line 164 "parser.y"
     {
       int na, nb, sym, ival;
       double val;
@@ -1459,11 +1460,12 @@ yyreduce:
       sym = (yyvsp[(5) - (5)].integer);
       val = (double) ival;
       elm(na, nb, 0, 0, !sym, val, id, crep);
+      XFREE(id);
     }
     break;
 
   case 10:
-#line 178 "parser.y"
+#line 180 "parser.y"
     {
       int na, nb, nac, nbc, sym;
       double val;
@@ -1476,11 +1478,12 @@ yyreduce:
       val = (yyvsp[(6) - (7)].real);
       sym = (yyvsp[(7) - (7)].integer);
       elm(na, nb, nac, nbc, !sym, val, id, crep);
+      XFREE(id);
     }
     break;
 
   case 11:
-#line 192 "parser.y"
+#line 195 "parser.y"
     {
       int na, nb, nac, nbc, sym, ival;
       double val;
@@ -1494,11 +1497,12 @@ yyreduce:
       sym = (yyvsp[(7) - (7)].integer);
       val = (double) ival;
       elm(na, nb, nac, nbc, !sym, val, id, crep);
+      XFREE(id);
     }
     break;
 
   case 12:
-#line 209 "parser.y"
+#line 213 "parser.y"
     {
       int na, nb, nac, nbc;
       char* id;
@@ -1508,11 +1512,12 @@ yyreduce:
       nac = (yyvsp[(4) - (5)].integer);
       nbc = (yyvsp[(5) - (5)].integer);
       elm(na, nb, nac, nbc, 0, 0, id, crep);
+      XFREE(id);
     }
     break;
 
   case 13:
-#line 221 "parser.y"
+#line 226 "parser.y"
     {
       int node;
       node = (yyvsp[(2) - (2)].integer);
@@ -1524,7 +1529,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1528 "parser.c"
+#line 1533 "parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1738,7 +1743,7 @@ yyreturn:
 }
 
 
-#line 230 "parser.y"
+#line 235 "parser.y"
 
 
 void

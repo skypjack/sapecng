@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 /**
  * \file list.c
@@ -55,6 +55,26 @@ list_new (void* udata)
   new->data = udata;
   return new;
 }
+
+/**
+ * \brief Simple function to delete a list
+ *
+ * This function can be used to delete a list. This is really a simple function
+ * that ignores list payload and simply frees basic list components.
+ *
+ * \param head head of the list
+ */
+void
+list_del (list_t* head)
+{
+  list_t* ltmp;
+  while(head) {
+    ltmp = head;
+    head = list_next(head);
+    XFREE(ltmp);
+  }
+}
+
 
 /**
  * \brief Useful to extend a %list adding a new element

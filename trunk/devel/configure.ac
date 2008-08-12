@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([sapec-ng],[1.9.0],[skypjack@gmail.com])
+AC_INIT([sapec-ng],[2.0.0],[skypjack@gmail.com])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([src/sapec-ng.c])
 AM_INIT_AUTOMAKE
@@ -17,12 +17,6 @@ AC_PROG_YACC
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h strings.h unistd.h])
-
-# Checks for gtk2
-PKG_CHECK_MODULES([GTK2],[gtk+-2.0],gtk2="yes",AC_MSG_WARN(GTK2_PKG_ERRORS))
-AM_CONDITIONAL(GTK2_H, test x$gtk2 = xyes)
-AC_SUBST([GTK2_CFLAGS])
-AC_SUBST([GTK2_LIBS])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
