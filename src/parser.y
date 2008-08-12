@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 %defines
 %error_verbose
@@ -69,9 +69,9 @@ elm (int na, int nb, const int nac, const int nbc, const int sym, const double v
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, tmp, crep->reserved, crep->reserved, crep->reference, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, crep->reserved, nb, na, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, crep->reserved, nb, na, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, crep->reserved, tmp, 0, 1, 1);
+    // noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nb, na, crep->reserved, tmp, NULL, 1, 1);
     break;
   case 'I':
     if(SAPWIN()) {
@@ -90,24 +90,24 @@ elm (int na, int nb, const int nac, const int nbc, const int sym, const double v
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, tmp, nbc, nac, nbc, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, nbc, nb, na, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, nbc, nb, na, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, nbc, tmp, 0, 1, 1);
+    // noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nb, na, nbc, tmp, NULL, 1, 1);
     break;
   case 'F':  // CCCS
     tmp = circ_getfree(crep);
     noerr &= addsimple(crep, nac, nbc, nbc, tmp, id, Y, 0, val, sym);
     // reverse-sign mode injection
-    // noerr &= addsimple(crep, na, nb, nbc, tmp, 0, Y, 0, -1, 0);
-    noerr &= addsimple(crep, na, nb, nbc, tmp, 0, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nbc, tmp, nbc, nac, 0, 1, 1);
+    // noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, -1, 0);
+    noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, 1, 0);
+    noerr &= addnullor(crep, nbc, tmp, nbc, nac, NULL, 1, 1);
     break;
   case 'Y':  // CCVS
     noerr &= addsimple(crep, nac, nbc, na, nb, id, Z, 0, val, sym);
-    noerr &= addnullor(crep, nb, na, nbc, nac, 0, 1, 1);
+    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
     break;
   case 'A':  // AMP.OP.
-    noerr &= addnullor(crep, nb, na, nbc, nac, 0, 1, 1);
+    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
     break;
   }
   if(!noerr)
@@ -158,6 +158,7 @@ selm: SID INT INT REAL INT
       val = $<real>4;
       sym = $<integer>5;
       elm(na, nb, 0, 0, !sym, val, id, crep);
+      XFREE(id);
     }
   | SID INT INT INT INT
     {
@@ -171,6 +172,7 @@ selm: SID INT INT REAL INT
       sym = $<integer>5;
       val = (double) ival;
       elm(na, nb, 0, 0, !sym, val, id, crep);
+      XFREE(id);
     }
   ;
 
@@ -187,6 +189,7 @@ celm: CID INT INT INT INT REAL INT
       val = $<real>6;
       sym = $<integer>7;
       elm(na, nb, nac, nbc, !sym, val, id, crep);
+      XFREE(id);
     }
   | CID INT INT INT INT INT INT
     {
@@ -202,6 +205,7 @@ celm: CID INT INT INT INT REAL INT
       sym = $<integer>7;
       val = (double) ival;
       elm(na, nb, nac, nbc, !sym, val, id, crep);
+      XFREE(id);
     }
   ;
 
@@ -215,6 +219,7 @@ acelm: ACID INT INT INT INT
       nac = $<integer>4;
       nbc = $<integer>5;
       elm(na, nb, nac, nbc, 0, 0, id, crep);
+      XFREE(id);
     }
 
 out: OUT INT

@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 /**
  * \file expr.h
@@ -63,10 +63,10 @@
  */
 struct expr
 {
-  struct expr* next;  /**< \e Next element of the %list */
+  struct expr* next;  /**< Next element of the %list */
   double vpart;  /**< Numeric part of the expression */
   int etoken;  /**< Number of symbolic elements */
-  short int degree;  /**< \e Degree of the specific token */
+  short int degree;  /**< Degree of the specific token */
   list_t* epart;  /**< List of symbolic elements */
 };
 
@@ -84,7 +84,7 @@ extern int
 splash (expr_t*, FILE*, const int);
 
 extern int
-expr_to_file (expr_t*, FILE*);
+expr_to_file (const expr_t*, FILE*);
 
 extern expr_t*
 expr_from_file (FILE*);
@@ -95,10 +95,7 @@ expr_new ();
 void
 free_expr (expr_t*);
 
-expr_t*
-expr_sort (expr_t*);
-
 int
-circ_to_expr (circ_t*, list_t**, list_t**);
+circ_to_expr (const circ_t*, list_t**, list_t**);
 
 #endif /* EXPR_H */

@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 /**
  * \file circuit.c
@@ -39,6 +39,32 @@
 #include "circuit.h"
 
 /**
+ * \brief Support function useful to delete a graph
+ *
+ * \internal
+ * Using this function current and voltage graph adjacency representations can be
+ * correctly and easily deleted.
+ *
+ * \param adjref graph adjacency reperesentation reference
+ */
+static void
+adj_rep_del (hn_t* adjref)
+{
+  tn_t* tntmp;
+  hn_t* hntmp;
+  while(adjref) {
+    while(adjref->nodes) {
+      tntmp = adjref->nodes;
+      adjref->nodes = list_next_entry(tn_t, adjref->nodes);
+      XFREE(tntmp);
+    }
+    hntmp = adjref;
+    adjref = list_next_entry(hn_t, adjref);
+    XFREE(hntmp);
+  }
+}
+
+/**
  * \brief circ_del frees the memory space pointed to by \a crct
  *
  * This function frees the memory space pointed to by \a %crct; if \a %crct is a
@@ -49,31 +75,14 @@
 void
 circ_del (circ_t* crct)
 {
-  forced_t* fptr;
   int iter;
   if(crct != NULL) {
-    while(crct->flist != NULL) {
-      fptr = crct->flist;
-      crct->flist = list_next_entry(forced_t, fptr);
-      XFREE(fptr->data->name);
-      XFREE(fptr->data);
-      XFREE(fptr);
-    }
-    if(crct->yref != NULL) {
-      XFREE(crct->yref->data->name);
-      XFREE(crct->yref->data);
-    }
-    XFREE(crct->yref);
-    if(crct->gref != NULL) {
-      XFREE(crct->gref->data->name);
-      XFREE(crct->gref->data);
-    }
-    XFREE(crct->gref);
+    list_del(crct->flist);
+    adj_rep_del(crct->gi);
+    adj_rep_del(crct->gv);
     for(iter = 0; iter < crct->ednum; ++iter)
       XFREE(crct->edge[iter].name);
     XFREE(crct->edge);
-    XFREE(crct->gi);
-    XFREE(crct->gv);
     XFREE(crct);
   } else warning("Null pointer!");
 }
@@ -83,7 +92,8 @@ circ_del (circ_t* crct)
  *
  * \internal
  * Using this function the size of the internal structures of the circuit will
- * be expanded (the structures will result of double size).
+ * be expanded (the structures will result of double size), that is, more edges
+ * will be allocated.
  *
  * \param crct circuit reference
  */
@@ -93,8 +103,6 @@ circ_ext (circ_t* crct)
   crct->free += (crct->dim) ? crct->dim : STDDIM; 
   crct->dim = (crct->dim) ? crct->dim * 2 : STDDIM;
   crct->edge = XREALLOC(edge_t, crct->edge, crct->dim);
-  crct->gi = XREALLOC(node_t, crct->gi, crct->dim * 2);
-  crct->gv = XREALLOC(node_t, crct->gv, crct->dim * 2);
 }
 
 /**
@@ -114,6 +122,65 @@ circ_chkfree (circ_t* crct)
 }
 
 /**
+ * \brief Function used to add head nodes
+ *
+ * \internal
+ * This is a support function useful to add head nodes
+ *
+ * \param head head of the graph
+ * \param node node value to be added
+ * \return node of interesting
+ */
+static hn_t*
+add_head (hn_t** head, const node_t node)
+{
+  hn_t* tmp;
+  while(*head && (*head)->node < node)
+    head = &((*head)->next);
+  if(!*head || (*head && (*head)->node != node)) {
+    tmp = *head;
+    *head = XMALLOC(hn_t, 1);
+    (*head)->next = tmp;
+    (*head)->prev = tmp ? tmp->prev : NULL;
+    if((*head)->prev)
+      (*head)->prev->next = *head;
+    if((*head)->next)
+      (*head)->next->prev = *head;
+    (*head)->node = node;
+    (*head)->nodes = NULL;
+  }
+  return *head;
+}
+
+/**
+ * \brief Function used to add tail nodes
+ *
+ * \internal
+ * This is a support function useful to add tail nodes
+ *
+ * \param tail %list of edges
+ * \param head %head node reference
+ * \param node node value to be added
+ * \param eref related %edge value
+ * \return node of interesting
+ */
+static tn_t*
+add_tail (tn_t** tail, hn_t* head, const node_t node, const uint eref)
+{
+  tn_t* tmp;
+  tmp = *tail;
+  *tail = XMALLOC(tn_t, 1);
+  (*tail)->prev = NULL;
+  (*tail)->next = tmp;
+  if((*tail)->next)
+    (*tail)->next->prev = *tail;
+  (*tail)->head = head;
+  (*tail)->node = node;
+  (*tail)->edge = eref;
+  return *tail;
+}
+
+/**
  * \brief Adding new %edge to the circuit is simpler, now.
  *
  * \internal
@@ -130,15 +197,19 @@ static edge_t*
 circ_addedge (circ_t* crct, const node_t git, const node_t gih, const node_t gvt, const node_t gvh)
 {
   edge_t* ret;
+  hn_t* head;
   int max;
-  int pos;
   circ_chkfree(crct);
   max = 0;
-  pos = crct->dim - crct->free;
-  crct->gi[2*pos] = git;
-  crct->gi[2*pos + 1] = gih;
-  crct->gv[2*pos] = gvt;
-  crct->gv[2*pos + 1] = gvh;
+  ret = &(crct->edge[crct->dim - crct->free]);
+  head = add_head(&(crct->gi), git);
+  ret->giref[0] = add_tail(&(head->nodes), head, gih, crct->dim - crct->free);
+  head = add_head(&(crct->gi), gih);
+  ret->giref[1] = add_tail(&(head->nodes), head, git, crct->dim - crct->free);
+  head = add_head(&(crct->gv), gvt);
+  ret->gvref[0] = add_tail(&(head->nodes), head, gvh, crct->dim - crct->free);
+  head = add_head(&(crct->gv), gvh);
+  ret->gvref[1] = add_tail(&(head->nodes), head, gvt, crct->dim - crct->free);
   --(crct->free);
   ++(crct->ednum);
   if((gih < LIMIT) && (gih > max)) max = gih;
@@ -146,7 +217,6 @@ circ_addedge (circ_t* crct, const node_t git, const node_t gih, const node_t gvt
   if((gvh < LIMIT) && (gvh > max)) max = gvh;
   if((gvt < LIMIT) && (gvt > max)) max = gvt;
   crct->nnum = ((max + 1 ) > crct->nnum) ? (max + 1) : crct->nnum;
-  ret = &(crct->edge[pos++]);
   return ret;
 }
 
@@ -155,7 +225,8 @@ circ_addedge (circ_t* crct, const node_t git, const node_t gih, const node_t gvt
  *
  * \internal
  * This function permits to add new %forced edges to the circuit via a simple
- * way.
+ * way, based on %circ_addedge function. Forced edges are tracked like payload
+ * into an ad-hoc list for further elaboration.
  *
  * \param crct circuit reference
  * \param gih %edge's head node into the current representation
@@ -168,100 +239,9 @@ static edge_t*
 circ_addforced (circ_t* crct, const node_t git, const node_t gih, const node_t gvt, const node_t gvh)
 {
   edge_t* ret;
-  int max;
-  forced_t* fptr;
-  fptr = XMALLOC(forced_t, 1);
-  crct->flist = (forced_t*)list_add((list_t*)fptr, (list_t*)crct->flist);
-  fptr->gitoken[0] = git;
-  fptr->gitoken[1] = gih;
-  fptr->gvtoken[0] = gvt;
-  fptr->gvtoken[1] = gvh;
+  ret = circ_addedge (crct, git, gih, gvt, gvh);
   ++(crct->efnum);
-  max = 0;
-  if((gih < LIMIT) && (gih > max)) max = gih;
-  if((git < LIMIT) && (git > max)) max = git;
-  if((gvh < LIMIT) && (gvh > max)) max = gvt;
-  if((gvt < LIMIT) && (gvt > max)) max = gvt;
-  crct->nnum = (max > crct->nnum) ? (max+1) : crct->nnum;
-  ret = (fptr->data = XMALLOC(edge_t, 1));
-  return ret;
-}
-
-/**
- * \brief It permits to add part of the special block useful for resolution
- * purpose.
- *
- * \internal
- * To perform symbolic analysis of the circuit is needed to add special elements
- * using specific informations that can be retrived directly from the circuit
- * itself; this function adds part of these special elements in form of a new
- * %edge using provided data.
- *
- * \param crct circuit reference
- * \param gih %edge's head node into the current representation
- * \param git %edge's tail node into the current representation
- * \param gvh %edge's head node into the voltage representation
- * \param gvt %edge's tail node into the voltage representation
- * \result new raw %edge reference
- */
-static edge_t*
-circ_addyref (circ_t* crct, const node_t git, const node_t gih, const node_t gvt, const node_t gvh)
-{
-  edge_t* ret;
-  int max;
-  yref_t* yptr;
-  yptr = XMALLOC(yref_t, 1);
-  yptr->gitoken[0] = git;
-  yptr->gitoken[1] = gih;
-  yptr->gvtoken[0] = gvt;
-  yptr->gvtoken[1] = gvh;
-  crct->yref = yptr;
-  max = 0;
-  if((gih < LIMIT) && (gih > max)) max = gih;
-  if((git < LIMIT) && (git > max)) max = git;
-  if((gvh < LIMIT) && (gvh > max)) max = gvh;
-  if((gvt < LIMIT) && (gvt > max)) max = gvt;
-  crct->nnum = (max > crct->nnum) ? (max+1) : crct->nnum;
-  ret = (yptr->data = XMALLOC(edge_t, 1));
-  return ret;
-}
-
-/**
- * \brief It permits to add part of the special block useful for resolution
- * purpose.
- *
- * \internal
- * To perform symbolic analysis of the circuit is needed to add special elements
- * using specific informations that can be retrived directly from the circuit
- * itself; this function adds part of these special elements in form of a new
- * %edge using provided data.
- *
- * \param crct circuit reference
- * \param gih %edge's head node into the current representation
- * \param git %edge's tail node into the current representation
- * \param gvh %edge's head node into the voltage representation
- * \param gvt %edge's tail node into the voltage representation
- * \result new raw %edge reference
- */
-static edge_t*
-circ_addgref (circ_t* crct, const node_t git, const node_t gih, const node_t gvt, const node_t gvh)
-{
-  edge_t* ret;
-  int max;
-  gref_t* gptr;
-  gptr = XMALLOC(gref_t, 1);
-  gptr->gitoken[0] = git;
-  gptr->gitoken[1] = gih;
-  gptr->gvtoken[0] = gvt;
-  gptr->gvtoken[1] = gvh;
-  crct->gref = gptr;
-  max = 0;
-  if((gih < LIMIT) && (gih > max)) max = gih;
-  if((git < LIMIT) && (git > max)) max = git;
-  if((gvh < LIMIT) && (gvh > max)) max = gvh;
-  if((gvt < LIMIT) && (gvt > max)) max = gvt;
-  crct->nnum = (max > crct->nnum) ? (max+1) : crct->nnum;
-  ret = (gptr->data = XMALLOC(edge_t, 1));
+  crct->flist = list_add(list_new(ret), crct->flist);
   return ret;
 }
 
@@ -291,7 +271,6 @@ circ_init (circ_t* crct)
     crct->gi = NULL;
     crct->gv = NULL;
     crct->flist = NULL;
-    crct->esupport = NULL;
     crct->yref = NULL;
     crct->gref = NULL;
     circ_ext(crct);
@@ -324,6 +303,32 @@ circ_getfree (circ_t* crct)
 }
 
 /**
+ * \brief Adjacency %list normalization function
+ *
+ * \internal
+ * It normalizes adjacency %list graph representation.
+ *
+ * \param adjref adjacency %list graph representation reference
+ * \param nnum number of graph nodes
+ */
+static void
+adj_rep_normalize (hn_t* adjref, const int nnum)
+{
+  tn_t* tail;
+  while(adjref) {
+    if(adjref->node >= LIMIT)
+      adjref->node = nnum + adjref->node % LIMIT;
+    tail = adjref->nodes;
+    while(tail) {
+      if(tail->node >= LIMIT)
+	tail->node = nnum + tail->node % LIMIT;
+      tail = list_next_entry(tn_t, tail);
+    }
+    adjref = list_next_entry(hn_t, adjref);
+  }
+}
+
+/**
  * \brief Circuit normalization function
  *
  * It normalizes the circuit, or better it maps node number from a value to
@@ -336,39 +341,9 @@ circ_getfree (circ_t* crct)
 void
 circ_normalize (circ_t* crct)
 {
-  int iter;
-  int dim;
-  isolated_t* iptr;
   if(crct != NULL) {
-    dim = crct->dim - crct->free;
-    forced_t* fptr = crct->flist;
-    while(fptr != NULL) {
-      if(fptr->gitoken[0] >= LIMIT) fptr->gitoken[0] = crct->nnum + fptr->gitoken[0] % LIMIT;
-      if(fptr->gitoken[1] >= LIMIT) fptr->gitoken[1] = crct->nnum + fptr->gitoken[1] % LIMIT;
-      if(fptr->gvtoken[0] >= LIMIT) fptr->gvtoken[0] = crct->nnum + fptr->gvtoken[0] % LIMIT;
-      if(fptr->gvtoken[1] >= LIMIT) fptr->gvtoken[1] = crct->nnum + fptr->gvtoken[1] % LIMIT;
-      fptr = list_next_entry(forced_t, fptr);
-    }
-    iptr = crct->yref;
-    if(iptr != NULL) {
-      if(iptr->gitoken[0] >= LIMIT) iptr->gitoken[0] = crct->nnum + iptr->gitoken[0] % LIMIT;
-      if(iptr->gitoken[1] >= LIMIT) iptr->gitoken[1] = crct->nnum + iptr->gitoken[1] % LIMIT;
-      if(iptr->gvtoken[0] >= LIMIT) iptr->gvtoken[0] = crct->nnum + iptr->gvtoken[0] % LIMIT;
-      if(iptr->gvtoken[1] >= LIMIT) iptr->gvtoken[1] = crct->nnum + iptr->gvtoken[1] % LIMIT;
-    }
-    iptr = crct->gref;
-    if(iptr != NULL) {
-      if(iptr->gitoken[0] >= LIMIT) iptr->gitoken[0] = crct->nnum + iptr->gitoken[0] % LIMIT;
-      if(iptr->gitoken[1] >= LIMIT) iptr->gitoken[1] = crct->nnum + iptr->gitoken[1] % LIMIT;
-      if(iptr->gvtoken[0] >= LIMIT) iptr->gvtoken[0] = crct->nnum + iptr->gvtoken[0] % LIMIT;
-      if(iptr->gvtoken[1] >= LIMIT) iptr->gvtoken[1] = crct->nnum + iptr->gvtoken[1] % LIMIT;
-    }
-    for(iter = 0; iter < dim; ++iter) {
-      if(crct->gi[2*iter] >= LIMIT) crct->gi[2*iter] = crct->nnum + crct->gi[2*iter] % LIMIT;
-      if(crct->gi[2*iter+1] >= LIMIT) crct->gi[2*iter+1] = crct->nnum + crct->gi[2*iter+1 ] % LIMIT;
-      if(crct->gv[2*iter] >= LIMIT) crct->gv[2*iter] = crct->nnum + crct->gv[2*iter] % LIMIT;
-      if(crct->gv[2*iter+1] >= LIMIT) crct->gv[2*iter+1] = crct->nnum + crct->gv[2*iter+1] % LIMIT; 
-    }
+    adj_rep_normalize(crct->gi, crct->nnum);
+    adj_rep_normalize(crct->gv, crct->nnum);
     if(crct->reference >= LIMIT) crct->reference = crct->nnum + crct->reference % LIMIT;
     if(crct->reserved >= LIMIT) crct->reserved = crct->nnum + crct->reserved % LIMIT;
     crct->nnum += crct->offset;
@@ -395,22 +370,24 @@ setblock (circ_t* crep)
   int flag = 1;
   if(crep != NULL) {
     if((crep->reference)&&(crep->reserved)&&(crep->onode)) {
-      if((eptr = circ_addyref(crep,crep->reference,crep->reserved,crep->reference,crep->reserved)) != NULL) {
+      if((eptr = circ_addedge(crep,crep->reference,crep->reserved,crep->reference,crep->reserved)) != NULL) {
         eptr->name = NULL;
         eptr->type = YREF;
         eptr->degree = 0;
         eptr->value = 1;
         eptr->sym = 0;
+	crep->yref = eptr;
       } else {
         warning("Unable to set yref!");
         flag = 0;
       }
-      if((eptr = circ_addgref(crep,crep->reference,crep->reserved,crep->basenode,crep->onode)) != NULL) {
+      if((eptr = circ_addedge(crep,crep->reference,crep->reserved,crep->basenode,crep->onode)) != NULL) {
         eptr->name = NULL;
         eptr->type = GREF;
         eptr->degree = 0;
         eptr->value = 1;
         eptr->sym = 0;
+	crep->gref = eptr;
       } else {
         warning("Unable to set gref!");
         flag = 0;
@@ -440,12 +417,12 @@ setblock (circ_t* crep)
  * \result zero if some error occurs, a positive value otherwise
  */
 int
-addsimple (circ_t* crep, const node_t nt, const node_t nh, const node_t ntc, const node_t nhc, char* name, const etype_t type, const short int degree, const double value, const int sym)
+addsimple (circ_t* crep, const node_t nt, const node_t nh, const node_t ntc, const node_t nhc, const char* name, const etype_t type, const short int degree, const double value, const int sym)
 {
   edge_t* eptr;
   int ret;
-  if((eptr = circ_addedge(crep, nt, nh, ntc, nhc)) != NULL) {
-    eptr->name = name;
+  if(crep && (eptr = circ_addedge(crep, nt, nh, ntc, nhc)) != NULL) {
+    eptr->name = xstrdup(name);
     eptr->type = type;
     eptr->degree = degree;
     eptr->value = value;
@@ -477,12 +454,12 @@ addsimple (circ_t* crep, const node_t nt, const node_t nh, const node_t ntc, con
  * \result zero if some error occurs, a positive value otherwise
  */
 int
-addnullor (circ_t* crep, const node_t nt, const node_t nh, const node_t ntc, const node_t nhc, char* name, const double value, const int sym)
+addnullor (circ_t* crep, const node_t nt, const node_t nh, const node_t ntc, const node_t nhc, const char* name, const double value, const int sym)
 {
   edge_t* eptr;
   int ret;
-  if((eptr = circ_addforced(crep,nt,nh,ntc,nhc)) != NULL) {
-    eptr->name = name;
+  if(crep && (eptr = circ_addforced(crep,nt,nh,ntc,nhc)) != NULL) {
+    eptr->name = xstrdup(name);
     eptr->type = F;
     eptr->degree = 0;
     eptr->value = value;

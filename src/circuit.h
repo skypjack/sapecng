@@ -1,29 +1,29 @@
 /****************************************************************************************
-
-   Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
-   Copyright (C)  2007  Michele Caini
-
-
-   This file is part of Sapec-NG.
-
-   Sapec-NG is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-   To contact me:   skypjack@gmail.com
-
-****************************************************************************************/
+ *
+ *  Sapec-NG, Next Generation Symbolic Analysis Program for Electric Circuit
+ *  Copyright (C)  2007  Michele Caini
+ *
+ *
+ *  This file is part of Sapec-NG.
+ *
+ *  Sapec-NG is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
+ *  To contact me:   skypjack@gmail.com
+ *
+ ***************************************************************************************/
 
 /**
  * \file circuit.h
@@ -41,6 +41,7 @@
 #define CIRCUIT_H 1
 
 #include "common.h"
+#include "list.h"
 
 /**
  * \brief Base size of the internal representation
@@ -58,20 +59,12 @@
 #define LIMIT 1024
 
 /**
- * \brief yref as support %edge
+ * \brief Edge reference number
  *
- * This macro sets yref as support %edge.
+ * Short and compact way to retrieve %edge reference number.
  */
-#define set_support_yref(crep) \
-  crep->esupport = (isolated_t*) crep->yref
-
-/**
- * \brief gref as support %edge
- *
- * This macro sets gref as support %edge.
- */
-#define set_support_gref(crep) \
-  crep->esupport = (isolated_t*) crep->gref
+#define edge_number(crct, ref) \
+  (int)(((int)ref - (int)crct->edge) / sizeof(edge_t))
 
 /**
  * \brief Possible types for %edge
@@ -103,6 +96,51 @@ short int
 node_t;
 
 /**
+ * \brief Tail node type
+ */
+typedef
+struct tail_node
+tn_t;
+
+/**
+ * \brief Head node
+ *
+ * The head node is that one edges come from, of course the tail of the
+ * edges. Edges head are represented by a sub-list of nodes called tail
+ * node. Yes, this is a rebus!
+ */
+struct head_node
+{
+  struct head_node* next;  /**< Successor in the %list */
+  struct head_node* prev;  /**< Previous in the %list */
+  node_t node;  /**< Node identifier */
+  tn_t* nodes;  /**< Sub-list of linked nodes */
+};
+
+/**
+ * \brief Head node type
+ */
+typedef
+struct head_node
+hn_t;
+
+/**
+ * \brief Tail node
+ *
+ * The tail node is that one edges come to, of course the head of
+ * the edges. Edges tail is represented by a link to a node called head
+ * node. Yes, this is a rebus!
+ */
+struct tail_node
+{
+  tn_t* next;  /**< Successor in the %list */
+  tn_t* prev;  /**< Previous in the %list */
+  hn_t* head;  /**< Head (tail of %edge) reference */
+  node_t node;  /**< Node identifier */
+  uint edge;  /**< Related %edge identifier */
+};
+
+/**
  * \brief Edge type
  *
  * This structure defines the type for links between nodes, so that these links
@@ -116,6 +154,8 @@ struct edge
   short int degree;  /**< Degree of the link */
   short int sym;  /**< Status of the link (symbolic or not) */
   double value;  /**< Value of the link */
+  tn_t* giref[2];  /**< References into the current graph */
+  tn_t* gvref[2];  /**< References into the voltage graph */
 };
 
 /**
@@ -124,63 +164,6 @@ struct edge
 typedef
 struct edge
 edge_t;
-
-/**
- * \brief Forced %edge type
- *
- * Edges of this type are %forced edges and it means that during common trees
- * find algorithm they are imperatively always present into these trees; there
- * are more "free" edges that %forced edges and the seconds are represented with
- * a special kind of %list (not the standard one of the project).
- */
-struct forced
-{
-  struct forced* next;  /**< Pointer to the next element of the %list */
-  edge_t* data;  /**< Edge related informations block */
-  node_t gitoken[2];  /**< Current graph representation */
-  node_t gvtoken[2];  /**< Voltage graph representation */
-};
-
-/**
- * \brief Simpler %struct %forced definition
- */
-typedef
-struct forced
-forced_t;
-
-/**
- * \brief Special additional %edge type
- *
- * Edges of this type are special edges that are added to the circuit because
- * they are the only way by means of which the circuit can be solved.
- */
-struct isolated
-{
-  edge_t* data;  /**< Edge related informations block */
-  node_t gitoken[2];  /**< Current graph representation */
-  node_t gvtoken[2];  /**< Voltage graph representation */
-};
-
-/**
- * \brief Simpler %struct %isolated definition
- */
-typedef
-struct isolated
-isolated_t;
-
-/**
- * \brief Alternative %struct %isolated definition
- */
-typedef
-isolated_t
-yref_t;
-
-/**
- * \brief Alternative %struct %isolated definition
- */
-typedef
-isolated_t
-gref_t;
 
 /**
  * \brief Circuit type
@@ -197,15 +180,14 @@ struct circ
   int nnum;  /**< Number of nodes (%onode must be smaller than %nnum) */
   int ednum;  /**< Number of standard edges */
   int efnum;  /**< Number of %forced edges */
-  int dim;  /**< Size of internal representation */
-  int free;  /**< Number of free nodes */
+  int dim;  /**< Number of allocated edges */
+  int free;  /**< Number of free edges */
   edge_t* edge;  /**< Edges store */
-  node_t* gi;  /**< Current circuit representation */
-  node_t* gv;  /**< Voltage circuit representation */
-  forced_t* flist;  /**< Forced edges %list */
-  isolated_t* esupport; /**< Support edge for a tree */
-  yref_t* yref;  /**< Special %edge */
-  gref_t* gref;  /**< Special %edge */
+  hn_t* gi;  /**< Current circuit representation */
+  hn_t* gv;  /**< Voltage circuit representation */
+  list_t* flist;  /**< Forced edges %list */
+  edge_t* yref;  /**< Extra component involved into resolution process */
+  edge_t* gref;  /**< Extra component involved into resolution process */
 };
 
 /**
@@ -231,9 +213,9 @@ extern int
 setblock (circ_t*);
 
 extern int
-addsimple (circ_t*, const node_t, const node_t, const node_t, const node_t, char*, const etype_t, const short int, const double, const int);
+addsimple (circ_t*, const node_t, const node_t, const node_t, const node_t, const char*, const etype_t, const short int, const double, const int);
 
 extern int
-addnullor (circ_t*, const node_t, const node_t, const node_t, const node_t, char*, const double, const int);
+addnullor (circ_t*, const node_t, const node_t, const node_t, const node_t, const char*, const double, const int);
 
 #endif /* CIRCUIT_H */
