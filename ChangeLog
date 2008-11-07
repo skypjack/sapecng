@@ -1,5 +1,10 @@
 ????-??-??  Michele Caini  <skypjack@gmail.com>
 
+	* src/circapi.[hc]: new circuit api
+	* src/parser.y: new circuit api based parser
+	* src/lexer.l (YY_DECL): new lexer definition
+	* src/Makefile.am (AM_YFLAGS): new parser definition
+
 	* stack.[hc]: deleted
 	* grimbleby.[hc]: deleted
 

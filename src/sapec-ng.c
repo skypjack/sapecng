@@ -44,7 +44,7 @@
 #include "expr.h"
 
 extern int
-yyparse (circ_t*);
+spcng_parse (circ_t*);
 
 /**
  * \brief Usage function
@@ -111,7 +111,7 @@ resolve (const char* ifile)
     // parser link ! :-)
     if((yyin = fopen(ifile, "r")) != NULL) {
       VERBOSE(".");
-      yyparse(crep);
+      spcng_parse(crep);
       fclose(yyin);
     }
     // ! parser link !

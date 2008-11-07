@@ -31,6 +31,7 @@
 %{
 #include "common.h"
 #include "circuit.h"
+#include "circapi.h"
 
 int
 yylex (void);
@@ -44,7 +45,7 @@ yyparse (circ_t*);
 void
 elm (int na, int nb, const int nac, const int nbc, const int sym, const double val, char* id, circ_t* crep)
 {
-  int tmp, noerr;
+  int swp, noerr;
   if((na < 0) || (nb < 0) || (nac < 0) || (nbc < 0))
     yyerror(crep, "negative node ... what's kind of node is it?");
   if(sym < 0)
@@ -52,62 +53,42 @@ elm (int na, int nb, const int nac, const int nbc, const int sym, const double v
   noerr = 1;
   switch(id[0]) {
   case 'R':
-    noerr &= addsimple(crep, na, nb, na, nb, id, Z, 0, val, sym);
+    noerr &= add_R (crep, id, na, nb, val, sym);
     break;
   case 'L':
-    noerr &= addsimple(crep, na, nb, na, nb, id, Z, 1, val, sym);
+    noerr &= add_L (crep, id, na, nb, val, sym);
     break;
   case 'G':
-    noerr &= addsimple(crep, na, nb, na, nb, id, Y, 0, val, sym);
+    noerr &= add_G (crep, id, na, nb, val, sym);
     break;
   case 'C':
-    noerr &= addsimple(crep, na, nb, na, nb, id, Y, 1, val, sym);
+    noerr &= add_C (crep, id, na, nb, val, sym);
     break;
   case 'V':
-    if(!crep->reference)
-      crep->reference = (na ? na : nb);
-    tmp = circ_getfree(crep);
-    noerr &= addsimple(crep, tmp, crep->reserved, crep->reserved, crep->reference, id, Y, 0, val, sym);
-    // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, crep->reserved, nb, na, NULL, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, crep->reserved, tmp, NULL, 1, 1);
+    noerr &= add_V (crep, id, na, nb, val, sym);
     break;
   case 'I':
     if(SAPWIN()) {
-      tmp = na;
+      swp = na;
       na = nb;
-      nb = tmp;
+      nb = swp;
     }
-    if(!crep->reference)
-      crep->reference = (na ? na : nb);
-    noerr &= addsimple(crep, na, nb, crep->reserved, crep->reference, id, Y, 0, val, sym);
+    noerr &= add_I (crep, id, na, nb, val, sym);
     break;
   case 'H':  // VCCS
-    noerr &= addsimple(crep, na, nb, nac, nbc, id, Y, 0, val, sym);
+    noerr &= add_VCCS (crep, id, na, nb, nac, nbc, val, sym);
     break;
   case 'E':  // VCVS
-    tmp = circ_getfree(crep);
-    noerr &= addsimple(crep, tmp, nbc, nac, nbc, id, Y, 0, val, sym);
-    // reverse-sign mode injection
-    // noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, -1, 0);
-    noerr &= addsimple(crep, tmp, nbc, nb, na, NULL, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nb, na, nbc, tmp, NULL, 1, 1);
+    noerr &= add_VCVS (crep, id, na, nb, nac, nbc, val, sym);
     break;
   case 'F':  // CCCS
-    tmp = circ_getfree(crep);
-    noerr &= addsimple(crep, nac, nbc, nbc, tmp, id, Y, 0, val, sym);
-    // reverse-sign mode injection
-    // noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, -1, 0);
-    noerr &= addsimple(crep, na, nb, nbc, tmp, NULL, Y, 0, 1, 0);
-    noerr &= addnullor(crep, nbc, tmp, nbc, nac, NULL, 1, 1);
+    noerr &= add_CCCS (crep, id, na, nb, nac, nbc, val, sym);
     break;
   case 'Y':  // CCVS
-    noerr &= addsimple(crep, nac, nbc, na, nb, id, Z, 0, val, sym);
-    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
+    noerr &= add_CCVS (crep, id, na, nb, nac, nbc, val, sym);
     break;
   case 'A':  // AMP.OP.
-    noerr &= addnullor(crep, nb, na, nbc, nac, NULL, 1, 1);
+    noerr &= add_OP_AMPL (crep, id, na, nb, nac, nbc);
     break;
   }
   if(!noerr)
