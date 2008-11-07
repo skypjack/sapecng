@@ -28,6 +28,8 @@
 %{
 #include "common.h"
 #include "parser.h"
+
+#define YY_DECL int spcng_lex ()
 %}
 
 %option noyywrap
@@ -49,9 +51,9 @@ EXP  [e|E][+|-]?[0-9]+
   pos = strcspn(yytext, " \t");
   cback = yytext[pos];
   yytext[pos] = '\0';
-  yylval.string = xstrdup(yytext);
+  spcng_lval.string = xstrdup(yytext);
   yytext[pos] = cback;
-  if(yylval.string == NULL) error("Null pointer!");
+  if(spcng_lval.string == NULL) error("Null pointer!");
   return(SID);
 }
 
@@ -61,9 +63,9 @@ EXP  [e|E][+|-]?[0-9]+
   pos = strcspn(yytext, " \t");
   cback = yytext[pos];
   yytext[pos] = '\0';
-  yylval.string = xstrdup(yytext);
+  spcng_lval.string = xstrdup(yytext);
   yytext[pos] = cback;
-  if(yylval.string == NULL) error("Null pointer!");
+  if(spcng_lval.string == NULL) error("Null pointer!");
   return(CID);
 }
 
@@ -73,24 +75,24 @@ EXP  [e|E][+|-]?[0-9]+
   pos = strcspn(yytext, " \t");
   cback = yytext[pos];
   yytext[pos] = '\0';
-  yylval.string = xstrdup(yytext);
+  spcng_lval.string = xstrdup(yytext);
   yytext[pos] = cback;
-  if(yylval.string == NULL) error("Null pointer!");
+  if(spcng_lval.string == NULL) error("Null pointer!");
   return(ACID);
 }
 
 {SIGN}?{DIGIT}*"."{DIGIT}+{EXP}?  {
-  yylval.real = (double) strtod((const char*) yytext, 0);
+  spcng_lval.real = (double) strtod((const char*) yytext, 0);
   return(REAL);
 }
 
 {SIGN}?{DIGIT}+{EXP}  {
-  yylval.real = (double) strtod((const char*) yytext, 0);
+  spcng_lval.real = (double) strtod((const char*) yytext, 0);
   return(REAL);
 }
 
 {SIGN}?{DIGIT}+  {
-  yylval.integer = (int) strtol((const char*) yytext, 0, 10);
+  spcng_lval.integer = (int) strtol((const char*) yytext, 0, 10);
   return(INT);
 }
 

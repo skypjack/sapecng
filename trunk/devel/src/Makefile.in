@@ -45,7 +45,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_sapec_ng_OBJECTS = circuit.$(OBJEXT) error.$(OBJEXT) list.$(OBJEXT) \
 	xmemrep.$(OBJEXT) parser.$(OBJEXT) lexer.$(OBJEXT) \
-	expr.$(OBJEXT) sapec-ng.$(OBJEXT)
+	expr.$(OBJEXT) circapi.$(OBJEXT) sapec-ng.$(OBJEXT)
 sapec_ng_OBJECTS = $(am_sapec_ng_OBJECTS)
 sapec_ng_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -154,12 +154,14 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 BUILT_SOURCES = parser.h
-AM_YFLAGS = -d
-# AM_CFLAGS = -Wall -Wextra -g -O0
-AM_CFLAGS = -Wall -O2
+AM_YFLAGS = -d -p spcng_
+AM_CFLAGS = -Wall -Wextra -g -O0
+# AM_CFLAGS = -Wall -O2
+CLEANFILES = parser.h parser.c lexer.c
 sapec_ng_SOURCES = common.h circuit.h circuit.c error.c \
 		list.h list.c xmemrep.c parser.y lexer.l \
-		expr.h expr.c sapec-ng.c
+		expr.h expr.c circapi.h circapi.c \
+		sapec-ng.c
 
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -233,6 +235,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/circapi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/circuit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/expr.Po@am__quote@
@@ -361,6 +364,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
