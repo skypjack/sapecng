@@ -1,0 +1,5 @@
+#define VERSION "1.8.4"
+#cmakedefine STDC_HEADERS
+#cmakedefine HAVE_STRING_H
+#cmakedefine HAVE_UNISTD_H
+#cmakedefine HAVE_ERRNO_H
