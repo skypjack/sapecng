@@ -1,0 +1,5 @@
+build/*
+!build/.keepme
+doc/*
+!doc/html/footer.html
+src/config.h
