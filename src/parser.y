@@ -208,7 +208,7 @@ out: OUT INT
       int node;
       node = $<integer>2;
       if(node < crep->nnum)
-	crep->onode = node;
+      crep->onode = node;
       else yyerror(crep, "wrong output node value");
     }
   ;
