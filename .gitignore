@@ -1,3 +1,14 @@
+#
+# QtCreator stuff
+#
+*.config
+*.creator
+*.files
+*.includes
+
+#
+# SapecNG stuff
+#
 build/*
 !build/.keepme
 doc/*
