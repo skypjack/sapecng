@@ -5,6 +5,7 @@
 *.creator
 *.files
 *.includes
+*.user
 
 #
 # SapecNG stuff
